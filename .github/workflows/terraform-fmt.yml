@@ -1,0 +1,57 @@
+name: Terraform Format Check
+
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+
+jobs:
+  terraform-fmt:
+    name: Terraform Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Comment PR on Format Issues
+        if: github.event_name == 'pull_request' && steps.fmt.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `#### Terraform Format Check 🖌\`${{ steps.fmt.outcome }}\`
+            
+            ⚠️ Terraform files are not properly formatted.
+            
+            Please run \`terraform fmt -recursive\` locally and push the changes.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail on Format Issues
+        if: steps.fmt.outcome == 'failure'
+        run: |
+          echo "Terraform fmt check failed. Please run 'terraform fmt -recursive' to fix formatting."
+          exit 1
