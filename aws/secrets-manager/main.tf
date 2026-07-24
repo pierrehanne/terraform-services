@@ -12,7 +12,7 @@ module "encryption_kms" {
 // Secret Encrypted
 resource "aws_secretsmanager_secret" "encrypted_secret" {
   name                    = "${var.project}-${var.secret_name}"
-  description             = "Secret for ${var.project}"
+  description             = "Secret encrypted by KMS for ${var.project} (${var.environment})"
   kms_key_id              = module.encryption_kms.kms_key_id
   policy                  = var.secret_policy_json
   recovery_window_in_days = var.recovery_window_in_days
