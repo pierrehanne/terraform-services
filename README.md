@@ -13,7 +13,7 @@ This repository provides production-ready Terraform modules for common AWS servi
 | **Bedrock Guardrail** | Deploy and manage Amazon Bedrock Guardrail with enterprise AI governance, including optional customer-managed AWS KMS encryption | `aws/bedrock-guardrail | Content filtering, PII detection & masking, Topic restrictions, Custom & managed word lists, Contextual grounding (hallucination prevention), Automatic guardrail versioning, Optional customer-managed KMS encryption |
 | **KMS** | Create and manage AWS KMS encryption keys with automatic rotation and alias management | `aws/kms` | Auto rotation, Multi-region support, Custom policies, Alias management |
 | **Secrets Manager** | Create encrypted secrets in AWS Secrets Manager with dedicated KMS encryption keys | `aws/secrets-manager` | Auto KMS key creation, Custom policies, Configurable rotation, Multi-region support |
-| **Secrets Manager** | Create VPC endpoints for AWS | `aws/vpc-endpoints` | Auto VPC Endpoints creation |
+| **VPC Endpoints** | Create VPC endpoints for AWS | `aws/vpc-endpoints` | Auto VPC Endpoints creation |
 
 ---
 
