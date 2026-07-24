@@ -1,5 +1,5 @@
 variable "alias" {
-  description = "KMS alias without the alias/ prefix."
+  description = "KMS alias without the alias/ project."
   type        = string
 }
 
