@@ -10,6 +10,7 @@ This repository provides production-ready Terraform modules for common AWS servi
 
 | Module | Description | Location | Key Features |
 |--------|-------------|----------|--------------|
+| **Aurora PostgreSQL** | Serverless v2 Aurora PostgreSQL cluster with dedicated KMS encryption and auto-managed master credentials | `aws/aurora-postgresql` | Serverless v2 auto-scaling, Auto-generated password stored in Secrets Manager, Dedicated KMS key via `kms` module, Configurable security group (SG or CIDR ingress), Parameter group family derived from engine version |
 | **Bedrock Guardrail** | Create and manage AWS Bedrock Guardrails with enterprise AI governance | `aws/bedrock-guardrails` | Content filtering, PII detection & masking, Topic restrictions, Custom & managed word lists, Contextual grounding, Automatic guardrail versioning |
 | **Lambda Layers** | Create and manage Lambda Layerswith automatic build from codebuild | `aws/lambda-layers` | Auto build lambda layers and register to S3 |
 | **KMS** | Create and manage AWS KMS encryption keys with automatic rotation and alias management | `aws/kms` | Auto rotation, Multi-region support, Custom policies, Alias management |

@@ -1,4 +1,3 @@
-// KMS Key
 module "encryption_kms" {
   source                      = "../kms"
   alias                       = local.encryption_kms_alias
@@ -9,7 +8,6 @@ module "encryption_kms" {
   tags                        = var.tags
 }
 
-// Secret Encrypted
 resource "aws_secretsmanager_secret" "encrypted_secret" {
   name                    = "${var.project}-${var.secret_name}"
   description             = "Secret encrypted by KMS for ${var.project} (${var.environment})"
