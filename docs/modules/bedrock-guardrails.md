@@ -1,0 +1,1 @@
+--8<-- "aws/bedrock-guardrails/README.md"

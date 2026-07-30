@@ -1,0 +1,91 @@
+site_name: Terraform Services
+site_description: Reusable, production-grade Terraform modules for AWS.
+# site_url is derived from the GitHub Pages deployment; set it if you use a custom domain.
+
+repo_name: pierrehanne/terraform-services
+repo_url: https://github.com/pierrehanne/terraform-services
+edit_uri: edit/main/
+
+theme:
+  name: material
+  palette:
+    # Light/dark toggle.
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.view
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  # Transclude module READMEs into the docs pages so they never drift from
+  # terraform-docs output. base_path is the repo root so pages can pull
+  # `aws/<module>/README.md` directly.
+  - pymdownx.snippets:
+      base_path:
+        - .
+      check_paths: true
+
+plugins:
+  - search
+
+# The module pages are transcluded from READMEs authored for GitHub, so they
+# carry relative links (to examples/, sibling modules, helper scripts) that
+# don't resolve inside the site. Don't fail the build on those; drift that
+# matters — a missing transcluded README — is still caught by the snippets
+# `check_paths: true` above, which hard-errors regardless of --strict.
+validation:
+  links:
+    not_found: ignore
+    unrecognized_links: ignore
+    absolute_links: ignore
+
+nav:
+  - Home: index.md
+  - Foundation:
+      - Network: modules/network.md
+      - KMS: modules/kms.md
+      - Secrets Manager: modules/secrets-manager.md
+      - IAM: modules/iam.md
+  - Compute & registry:
+      - ECR: modules/ecr.md
+      - ECS Fargate: modules/ecs-fargate.md
+      - ALB: modules/alb.md
+  - Networking & identity:
+      - DNS: modules/dns.md
+      - Cognito: modules/cognito.md
+  - Data:
+      - Storage: modules/storage.md
+      - Aurora PostgreSQL: modules/aurora-postgresql.md
+  - AI & serverless:
+      - Bedrock Guardrail: modules/bedrock-guardrails.md
+      - Bedrock Knowledge Base: modules/bedrock-knowledge-base.md
+      - AgentCore: modules/agentcore.md
+      - Lambda Layers: modules/lambda-layers.md

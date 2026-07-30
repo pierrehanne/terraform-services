@@ -1,0 +1,1 @@
+--8<-- "aws/ecs-fargate/README.md"

@@ -1,0 +1,1 @@
+--8<-- "aws/dns/README.md"
