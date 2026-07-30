@@ -1,0 +1,1 @@
+--8<-- "aws/ecr/README.md"

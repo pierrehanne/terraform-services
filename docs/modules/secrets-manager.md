@@ -1,0 +1,1 @@
+--8<-- "aws/secrets-manager/README.md"

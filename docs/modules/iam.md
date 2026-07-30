@@ -1,0 +1,1 @@
+--8<-- "aws/iam/README.md"

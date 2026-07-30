@@ -21,9 +21,14 @@ variable "multi_region" {
 }
 
 variable "kms_rotation_period_in_days" {
-  description = "Rotation period for the KMS key"
+  description = "Rotation period in days for the KMS key when rotation is enabled (valid range 90-2560)."
   type        = number
   default     = 365
+
+  validation {
+    condition     = var.kms_rotation_period_in_days >= 90 && var.kms_rotation_period_in_days <= 2560
+    error_message = "kms_rotation_period_in_days must be between 90 and 2560."
+  }
 }
 
 variable "kms_policy" {

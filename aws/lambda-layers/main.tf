@@ -1,3 +1,7 @@
+locals {
+  common_tags = merge({ Project = var.project, Environment = var.environment }, var.tags)
+}
+
 resource "null_resource" "build_layer" {
   for_each = var.layers
 
@@ -50,6 +54,9 @@ resource "aws_lambda_layer_version" "from_codebuild" {
   compatible_runtimes      = each.value.runtimes
   compatible_architectures = each.value.architectures
   source_code_hash         = data.aws_s3_object.layer_zip[each.key].etag
+
+  # NOTE: aws_lambda_layer_version does not support a `tags` argument; layer
+  # versions cannot be tagged via the AWS API.
 
   depends_on = [null_resource.build_layer]
 }

@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keep GitHub Actions (including SHA-pinned third-party actions) up to date.
+  # Dependabot opens a PR that bumps the pinned SHA and updates the trailing
+  # version comment, so updates still go through human review.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  # Keep the MkDocs docs-site build dependencies up to date.
+  - package-ecosystem: "pip"
+    directory: "/docs"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "docs"
+    labels:
+      - "dependencies"
+      - "documentation"

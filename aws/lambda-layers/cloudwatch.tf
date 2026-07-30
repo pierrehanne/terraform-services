@@ -53,12 +53,12 @@ module "kms_cb_log_group" {
   alias       = "alias/cloudwatch/${var.project}/${var.environment}/${var.codebuild.name}"
   description = "CloudWatch encryption key for ${var.codebuild.name} (${var.environment})"
   kms_policy  = data.aws_iam_policy_document.kms_cb_log_group.json
-  tags        = var.tags
+  tags        = merge({ Name = "alias/cloudwatch/${var.project}/${var.environment}/${var.codebuild.name}" }, local.common_tags)
 }
 
 resource "aws_cloudwatch_log_group" "code_build" {
   name              = local.cloudwatch_log_group_name
   retention_in_days = var.codebuild.log_retention
   kms_key_id        = module.kms_cb_log_group.kms_key_arn
-  tags              = var.tags
+  tags              = merge({ Name = local.cloudwatch_log_group_name }, local.common_tags)
 }

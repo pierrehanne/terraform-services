@@ -1,0 +1,1 @@
+--8<-- "aws/bedrock-knowledge-base/README.md"

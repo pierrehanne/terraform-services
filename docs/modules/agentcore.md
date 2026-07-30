@@ -1,0 +1,1 @@
+--8<-- "aws/agentcore/README.md"

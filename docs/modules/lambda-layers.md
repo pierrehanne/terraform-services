@@ -1,0 +1,1 @@
+--8<-- "aws/lambda-layers/README.md"

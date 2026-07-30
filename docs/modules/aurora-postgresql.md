@@ -1,0 +1,1 @@
+--8<-- "aws/aurora-postgresql/README.md"

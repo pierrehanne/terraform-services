@@ -1,0 +1,82 @@
+name: Tag Release
+
+# Manual-only release tagging. There is no push/schedule trigger, so a tag can
+# never be created automatically — someone has to run this workflow by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag (X.Y.Z, e.g. 1.4.0). A "v" prefix is added automatically.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  tag:
+    name: Create version tag
+    runs-on: ubuntu-latest
+    # Guardrail 1: only allow tagging from the main branch. workflow_dispatch can
+    # be launched against any ref, so we reject anything that isn't refs/heads/main.
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write # required to push the new tag
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0 # need full history + all tags to compare versions
+          fetch-tags: true
+
+      - name: Validate and create tag
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          # Guardrail 2: enforce strict X.Y.Z (semantic version) format.
+          if [[ ! "$INPUT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$INPUT_VERSION' is not valid. Expected X.Y.Z with numeric parts (e.g. 1.4.0)."
+            exit 1
+          fi
+
+          NEW_TAG="v$INPUT_VERSION"
+
+          # Reject if the tag already exists.
+          if git rev-parse -q --verify "refs/tags/$NEW_TAG" >/dev/null; then
+            echo "::error::Tag '$NEW_TAG' already exists."
+            exit 1
+          fi
+
+          # Guardrail 3: enforce a strictly incremental version. Find the highest
+          # existing vX.Y.Z tag and require the new one to be greater.
+          LATEST_TAG=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+
+          if [[ -z "$LATEST_TAG" ]]; then
+            echo "No existing version tag found. '$NEW_TAG' will be the first release."
+          else
+            echo "Latest existing tag: $LATEST_TAG"
+            LATEST_VERSION="${LATEST_TAG#v}"
+
+            IFS='.' read -r NEW_MAJOR NEW_MINOR NEW_PATCH <<< "$INPUT_VERSION"
+            IFS='.' read -r CUR_MAJOR CUR_MINOR CUR_PATCH <<< "$LATEST_VERSION"
+
+            NEW_NUM=$((NEW_MAJOR * 1000000 + NEW_MINOR * 1000 + NEW_PATCH))
+            CUR_NUM=$((CUR_MAJOR * 1000000 + CUR_MINOR * 1000 + CUR_PATCH))
+
+            if (( NEW_NUM <= CUR_NUM )); then
+              echo "::error::Version '$INPUT_VERSION' is not greater than the latest '$LATEST_VERSION'. Versions must increment."
+              exit 1
+            fi
+          fi
+
+          echo "Creating tag $NEW_TAG on $(git rev-parse --short HEAD)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
+          git push origin "$NEW_TAG"
+
+          echo "### ✅ Tagged \`$NEW_TAG\`" >> "$GITHUB_STEP_SUMMARY"

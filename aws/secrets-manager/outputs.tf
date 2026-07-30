@@ -2,9 +2,9 @@ output "encrypted_secret" {
   description = "Encrypted secret and its associated KMS key."
 
   value = {
-    id   = aws_secretsmanager_secret.encrypted_secret.id
-    name = aws_secretsmanager_secret.encrypted_secret.name
-    arn  = aws_secretsmanager_secret.encrypted_secret.arn
+    id   = aws_secretsmanager_secret.this.id
+    name = aws_secretsmanager_secret.this.name
+    arn  = aws_secretsmanager_secret.this.arn
 
     kms = {
       id        = module.encryption_kms.kms_key_id
