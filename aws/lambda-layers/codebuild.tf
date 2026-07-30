@@ -14,7 +14,7 @@ resource "aws_iam_role" "codebuild" {
       }
     ]
   })
-  tags = merge({ Name = "${var.codebuild.name}-role" }, var.tags)
+  tags = merge({ Name = "${var.codebuild.name}-role" }, local.common_tags)
 }
 
 data "aws_iam_policy_document" "codebuild" {
@@ -92,6 +92,7 @@ data "aws_iam_policy_document" "codebuild" {
 resource "aws_iam_policy" "codebuild" {
   name   = "${var.codebuild.name}-policy"
   policy = data.aws_iam_policy_document.codebuild.json
+  tags   = merge({ Name = "${var.codebuild.name}-policy" }, local.common_tags)
 }
 
 resource "aws_iam_role_policy_attachment" "codebuild" {
@@ -134,4 +135,6 @@ resource "aws_codebuild_project" "layer" {
       group_name = aws_cloudwatch_log_group.code_build.name
     }
   }
+
+  tags = merge({ Name = "${each.value.layer_name}-cb" }, local.common_tags)
 }
