@@ -1,0 +1,67 @@
+name: Docs Site
+
+# Build and deploy the MkDocs Material site to GitHub Pages. Runs on pushes to
+# main that touch the docs, and can be triggered manually.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'aws/**/README.md'
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs-site.yml'
+  workflow_dispatch:
+
+# Least privilege: read by default; the deploy job is granted exactly what the
+# GitHub Pages deployment needs.
+permissions:
+  contents: read
+
+# Allow only one concurrent deployment; don't cancel an in-progress run so a
+# publish completes cleanly.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements.txt
+
+      # --strict fails the build on broken references (e.g. a missing README a
+      # page tries to transclude), so drift is caught in CI rather than shipped.
+      - name: Build MkDocs site
+        run: mkdocs build --strict
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write # deploy to GitHub Pages
+      id-token: write # OIDC token required by deploy-pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

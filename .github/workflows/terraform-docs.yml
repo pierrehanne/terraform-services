@@ -1,0 +1,43 @@
+name: Terraform Docs
+
+on:
+  pull_request:
+    paths:
+      - 'aws/**/*.tf'
+
+# No workflow-level permissions; the token defaults to read-only and only the
+# job that needs to push is granted contents: write.
+permissions:
+  contents: read
+
+jobs:
+  terraform-docs:
+    name: Generate Terraform Docs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # required to push regenerated docs back to the PR branch
+    # Only run on PRs from branches in this repository. Auto-commit requires a
+    # writable token, which fork PRs do not receive, and this avoids checking
+    # out an untrusted fork branch with write permissions.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Same-repo branch (guaranteed by the job-level if:) so the action can
+          # commit the regenerated docs back to it.
+          ref: ${{ github.head_ref }}
+
+      # Pinned to an immutable commit SHA (supply-chain hardening). Verify the
+      # SHA maps to a terraform-docs/gh-actions release you trust before merging,
+      # and bump it via Dependabot/Renovate.
+      - name: Render terraform-docs and commit
+        uses: terraform-docs/gh-actions@aeae0038ed47a547e0c0fca5c059d3335f48fb25 # v1.3.0
+        with:
+          # Modules whose README.md carries the BEGIN_TF_DOCS/END_TF_DOCS markers.
+          working-dir: aws/agentcore,aws/alb,aws/bedrock-knowledge-base,aws/cognito,aws/dns,aws/ecr,aws/ecs-fargate,aws/iam,aws/network,aws/storage
+          output-file: README.md
+          output-method: inject
+          git-push: "true"
+          git-commit-message: "docs: update terraform-docs"
