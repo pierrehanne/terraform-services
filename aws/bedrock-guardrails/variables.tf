@@ -1,10 +1,10 @@
-variable "environment" {
-  description = "Environment name (e.g., production, staging, development)"
+variable "project" {
+  description = "Project name"
   type        = string
 }
 
-variable "project" {
-  description = "Project name"
+variable "environment" {
+  description = "Environment name (e.g., production, staging, development)"
   type        = string
 }
 

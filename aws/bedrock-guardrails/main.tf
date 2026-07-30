@@ -1,9 +1,23 @@
+locals {
+  common_tags = merge(
+    {
+      Project     = var.project
+      Environment = var.environment
+    },
+    var.tags
+  )
+}
+
 resource "aws_bedrock_guardrail" "this" {
   for_each = var.guardrails
 
   name        = "${var.project}-${var.environment}-${each.key}"
   kms_key_arn = var.kms_key_arn
-  tags        = var.tags
+
+  tags = merge(
+    { Name = "${var.project}-${var.environment}-${each.key}" },
+    local.common_tags
+  )
 
   description = coalesce(
     each.value.description,
