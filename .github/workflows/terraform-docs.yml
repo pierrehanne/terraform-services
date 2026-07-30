@@ -33,7 +33,7 @@ jobs:
       # SHA maps to a terraform-docs/gh-actions release you trust before merging,
       # and bump it via Dependabot/Renovate.
       - name: Render terraform-docs and commit
-        uses: terraform-docs/gh-actions@aeae0038ed47a547e0c0fca5c059d3335f48fb25 # v1.3.0
+        uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c # v1.4.1
         with:
           # Modules whose README.md carries the BEGIN_TF_DOCS/END_TF_DOCS markers.
           working-dir: aws/agentcore,aws/alb,aws/bedrock-knowledge-base,aws/cognito,aws/dns,aws/ecr,aws/ecs-fargate,aws/iam,aws/network,aws/storage
