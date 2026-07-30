@@ -1,14 +1,10 @@
-locals {
-  encryption_kms_alias = "alias/secretsmanager/${var.project}/${var.environment}/${var.secret_name}"
+variable "project" {
+  description = "Project name used for naming and organizing secrets"
+  type        = string
 }
 
 variable "environment" {
   description = "Environment name (e.g., production, staging, development)"
-  type        = string
-}
-
-variable "project" {
-  description = "Project name used for naming and organizing secrets"
   type        = string
 }
 
@@ -51,4 +47,5 @@ variable "kms_multi_region_key" {
 variable "tags" {
   description = "Tags to apply to the secret and KMS key resources"
   type        = map(string)
+  default     = {}
 }
