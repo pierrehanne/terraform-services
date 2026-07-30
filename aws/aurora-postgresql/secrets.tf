@@ -10,7 +10,7 @@ module "master_secret" {
   environment             = var.environment
   secret_name             = "${var.name}-master-credentials"
   recovery_window_in_days = var.secret_recovery_window_in_days
-  tags                    = var.tags
+  tags                    = local.common_tags
 }
 
 resource "aws_secretsmanager_secret_version" "master" {

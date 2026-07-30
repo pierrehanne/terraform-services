@@ -1,20 +1,22 @@
 locals {
+  name_prefix   = "${var.project}-${var.name}"
   database_name = coalesce(var.database_name, replace(var.name, "-", "_"))
+  common_tags   = merge({ Project = var.project, Environment = var.environment }, var.tags)
 }
 
 resource "aws_db_subnet_group" "this" {
-  name        = "${var.project}-${var.name}"
+  name        = local.name_prefix
   description = "Subnet group for Aurora PostgreSQL cluster ${var.name}"
   subnet_ids  = var.subnet_ids
 
   tags = merge(
-    { Name = "${var.project}-${var.name}" },
-    var.tags
+    { Name = local.name_prefix },
+    local.common_tags
   )
 }
 
 resource "aws_rds_cluster" "this" {
-  cluster_identifier              = "${var.project}-${var.name}"
+  cluster_identifier              = local.name_prefix
   database_name                   = local.database_name
   engine                          = "aurora-postgresql"
   engine_mode                     = "provisioned"
@@ -23,7 +25,7 @@ resource "aws_rds_cluster" "this" {
   master_password                 = random_password.master.result
   db_subnet_group_name            = aws_db_subnet_group.this.name
   db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.this.name
-  vpc_security_group_ids          = [aws_security_group.aurora.id]
+  vpc_security_group_ids          = [aws_security_group.this.id]
 
   storage_encrypted = true
   kms_key_id        = module.encryption_kms.kms_key_arn
@@ -34,7 +36,7 @@ resource "aws_rds_cluster" "this" {
 
   deletion_protection         = var.deletion_protection
   skip_final_snapshot         = var.skip_final_snapshot
-  final_snapshot_identifier   = var.skip_final_snapshot ? null : "${var.project}-${var.name}-final"
+  final_snapshot_identifier   = var.skip_final_snapshot ? null : "${local.name_prefix}-final"
   apply_immediately           = var.apply_immediately
   allow_major_version_upgrade = var.allow_major_version_upgrade
 
@@ -51,15 +53,15 @@ resource "aws_rds_cluster" "this" {
   }
 
   tags = merge(
-    { Name = "${var.project}-${var.name}" },
-    var.tags
+    { Name = local.name_prefix },
+    local.common_tags
   )
 }
 
 resource "aws_rds_cluster_instance" "this" {
   count = var.instance_count
 
-  identifier         = "${var.project}-${var.name}-${count.index + 1}"
+  identifier         = "${local.name_prefix}-${count.index + 1}"
   cluster_identifier = aws_rds_cluster.this.id
   instance_class     = "db.serverless"
   engine             = aws_rds_cluster.this.engine
@@ -76,7 +78,7 @@ resource "aws_rds_cluster_instance" "this" {
   performance_insights_kms_key_id = var.performance_insights_enabled ? module.encryption_kms.kms_key_arn : null
 
   tags = merge(
-    { Name = "${var.project}-${var.name}-${count.index + 1}" },
-    var.tags
+    { Name = "${local.name_prefix}-${count.index + 1}" },
+    local.common_tags
   )
 }

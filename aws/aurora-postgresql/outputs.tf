@@ -40,7 +40,7 @@ output "master_username" {
 
 output "security_group_id" {
   description = "ID of the security group attached to the cluster instances"
-  value       = aws_security_group.aurora.id
+  value       = aws_security_group.this.id
 }
 
 output "kms_key_arn" {

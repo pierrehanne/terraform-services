@@ -4,7 +4,7 @@ locals {
 }
 
 resource "aws_rds_cluster_parameter_group" "this" {
-  name        = "${var.project}-${var.name}"
+  name        = local.name_prefix
   description = "Cluster parameter group for ${var.name}"
   family      = local.parameter_group_family
 
@@ -18,13 +18,13 @@ resource "aws_rds_cluster_parameter_group" "this" {
   }
 
   tags = merge(
-    { Name = "${var.project}-${var.name}" },
-    var.tags
+    { Name = local.name_prefix },
+    local.common_tags
   )
 }
 
 resource "aws_db_parameter_group" "this" {
-  name        = "${var.project}-${var.name}"
+  name        = local.name_prefix
   description = "Instance parameter group for ${var.name}"
   family      = local.parameter_group_family
 
@@ -38,7 +38,7 @@ resource "aws_db_parameter_group" "this" {
   }
 
   tags = merge(
-    { Name = "${var.project}-${var.name}" },
-    var.tags
+    { Name = local.name_prefix },
+    local.common_tags
   )
 }

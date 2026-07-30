@@ -1,12 +1,12 @@
-resource "aws_security_group" "aurora" {
-  name                   = "${var.project}-${var.name}-sg"
+resource "aws_security_group" "this" {
+  name                   = "${local.name_prefix}-sg"
   description            = "Security group for Aurora PostgreSQL cluster ${var.name}"
   vpc_id                 = var.vpc_id
   revoke_rules_on_delete = true
 
   tags = merge(
-    { Name = "${var.project}-${var.name}-sg" },
-    var.tags
+    { Name = "${local.name_prefix}-sg" },
+    local.common_tags
   )
 
   lifecycle {
@@ -23,7 +23,7 @@ resource "aws_security_group_rule" "ingress_security_groups" {
   to_port                  = 5432
   protocol                 = "tcp"
   source_security_group_id = var.allowed_security_group_ids[count.index]
-  security_group_id        = aws_security_group.aurora.id
+  security_group_id        = aws_security_group.this.id
 }
 
 resource "aws_security_group_rule" "ingress_cidr_blocks" {
@@ -35,7 +35,7 @@ resource "aws_security_group_rule" "ingress_cidr_blocks" {
   to_port           = 5432
   protocol          = "tcp"
   cidr_blocks       = var.allowed_cidr_blocks
-  security_group_id = aws_security_group.aurora.id
+  security_group_id = aws_security_group.this.id
 }
 
 resource "aws_security_group_rule" "egress" {
@@ -45,5 +45,5 @@ resource "aws_security_group_rule" "egress" {
   to_port           = 0
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.aurora.id
+  security_group_id = aws_security_group.this.id
 }
