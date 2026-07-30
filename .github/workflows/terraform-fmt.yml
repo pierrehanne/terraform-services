@@ -32,7 +32,7 @@ jobs:
 
       - name: Comment PR on Format Issues
         if: github.event_name == 'pull_request' && steps.fmt.outcome == 'failure'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const output = `#### Terraform Format Check 🖌\`${{ steps.fmt.outcome }}\`
