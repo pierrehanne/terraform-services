@@ -1,0 +1,196 @@
+name: CI
+
+# Unified Terraform quality gate. Runs on every PR and on pushes to main that
+# touch Terraform. fmt + validate + tflint block the merge; the security scan is
+# report-only (uploads to the Security tab) so a false positive can't lock the
+# repo. Each module is validated in isolation with a dynamically discovered
+# matrix, so adding a new aws/<module> needs no changes here.
+on:
+  pull_request:
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.tflint.hcl'
+      - '.github/workflows/ci.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.tflint.hcl'
+      - '.github/workflows/ci.yml'
+
+# Least privilege by default; only the security job widens its own scope.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref (a new push to a PR stops the old run).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Repo-wide formatting check. Comments on the PR when files are unformatted.
+  fmt:
+    name: Format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Comment PR on format issues
+        if: github.event_name == 'pull_request' && steps.fmt.outcome == 'failure'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const output = `#### Terraform Format Check 🖌\`${{ steps.fmt.outcome }}\`
+
+            ⚠️ Terraform files are not properly formatted.
+
+            Please run \`terraform fmt -recursive\` locally and push the changes.`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail on format issues
+        if: steps.fmt.outcome == 'failure'
+        run: |
+          echo "Terraform fmt check failed. Run 'terraform fmt -recursive' to fix formatting."
+          exit 1
+
+  # Discover every module under aws/* (anything with a versions.tf) and emit a
+  # JSON array the validate/tflint matrices fan out over. New modules are picked
+  # up automatically.
+  discover:
+    name: Discover modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.find.outputs.modules }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find module directories
+        id: find
+        run: |
+          set -euo pipefail
+          modules=$(find aws -mindepth 2 -maxdepth 2 -name versions.tf \
+            -printf '%h\n' | sort | jq -R . | jq -cs .)
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+          echo "Discovered modules: $modules"
+
+  # Validate each module in isolation. -backend=false + no AWS creds means this
+  # is pure schema validation: hermetic, fast, and safe on fork PRs.
+  validate:
+    name: Validate (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    needs: discover
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform init
+        working-directory: ${{ matrix.module }}
+        run: terraform init -backend=false -input=false
+
+      - name: Terraform validate
+        working-directory: ${{ matrix.module }}
+        run: terraform validate
+
+  # Lint each module with the AWS ruleset, sharing .tflint.hcl with pre-commit.
+  tflint:
+    name: tflint (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    needs: discover
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.discover.outputs.modules) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup tflint
+        uses: terraform-linters/setup-tflint@v6
+
+      - name: Init tflint plugins
+        run: tflint --init
+        env:
+          # Higher GitHub API rate limit when fetching the AWS ruleset plugin.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tflint
+        working-directory: ${{ matrix.module }}
+        run: tflint --format compact
+
+  # Report-only security scan. Soft-fails so findings never block a merge; they
+  # land in the Security tab as SARIF for triage.
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # upload SARIF to the code-scanning dashboard
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Trivy IaC scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: config
+          scan-ref: aws
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: '0' # report-only: never fail the job
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-iac
+
+  # Single stable gate for branch protection. Because validate/tflint are a
+  # dynamic matrix, their individual check names change as modules are added;
+  # requiring this one job instead stays correct forever. It runs even when a
+  # dependency fails (always()) and asserts none of the required jobs failed or
+  # were skipped — a skipped dependency must NOT count as success.
+  ci-success:
+    name: CI success
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [fmt, validate, tflint]
+    steps:
+      - name: Verify required jobs succeeded
+        run: |
+          echo "fmt=${{ needs.fmt.result }}"
+          echo "validate=${{ needs.validate.result }}"
+          echo "tflint=${{ needs.tflint.result }}"
+          if [[ "${{ needs.fmt.result }}" != "success" \
+             || "${{ needs.validate.result }}" != "success" \
+             || "${{ needs.tflint.result }}" != "success" ]]; then
+            echo "::error::One or more required CI jobs did not succeed."
+            exit 1
+          fi
+          echo "All required jobs succeeded."
