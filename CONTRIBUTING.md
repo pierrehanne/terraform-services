@@ -12,6 +12,7 @@ the modules consistent and the review process smooth.
 - [Coding standards](#coding-standards)
 - [Commit messages](#commit-messages)
 - [Opening a pull request](#opening-a-pull-request)
+- [Continuous integration](#continuous-integration)
 - [Releases](#releases)
 
 ## Ways to contribute
@@ -94,10 +95,36 @@ Examples from the history:
 ## Opening a pull request
 
 - Fill out the pull request template.
-- Ensure CI is green (fmt, validate, docs, lint).
+- Ensure CI is green (see [Continuous integration](#continuous-integration)).
 - Link any related issue (`Closes #123`).
 - Keep the PR scoped to a single concern; split unrelated changes.
 - Be responsive to review feedback — maintainers review on a best-effort basis.
+
+## Continuous integration
+
+Every pull request runs the **CI** workflow (`.github/workflows/ci.yml`), which
+gates the merge on:
+
+- **`fmt`** — `terraform fmt -check -recursive` across the repo.
+- **`validate`** — `terraform validate` for each module in `aws/*`, run as a
+  matrix (a job per module, discovered automatically).
+- **`tflint`** — the AWS ruleset per module, using the shared `.tflint.hcl`.
+
+A **`security`** job (Trivy IaC scan) also runs, but it is **report-only**:
+findings are uploaded to the repository's **Security → Code scanning** tab and
+never block a merge. Triage them there.
+
+These are the same checks the pre-commit hooks run locally, so
+`pre-commit run --all-files` should pass before you push.
+
+All jobs feed a single **`CI success`** gate job, which fails unless `fmt`,
+`validate`, and every `tflint` matrix job succeeded.
+
+> **Maintainers:** enforce CI with a branch protection rule on `main`. Under
+> **Settings → Branches → Branch protection rules**, require the **`CI success`**
+> status check to pass before merging. That one check is enough — it aggregates
+> `fmt`, `validate`, and `tflint`, so it stays correct even as modules are added
+> or removed from the matrix.
 
 ## Releases
 
