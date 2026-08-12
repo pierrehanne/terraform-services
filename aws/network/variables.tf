@@ -1,3 +1,85 @@
+locals {
+  # ---------------------------------------------------------------------------
+  # Endpoint creation
+  # ---------------------------------------------------------------------------
+
+  create_endpoints = (
+    length(var.application_subnet_cidrs) > 0 ||
+    length(var.data_subnet_cidrs) > 0
+  )
+
+  # ---------------------------------------------------------------------------
+  # Private route tables used by Gateway endpoints
+  # ---------------------------------------------------------------------------
+
+  private_route_table_ids = concat(
+    [
+      for route_table in aws_route_table.application :
+      route_table.id
+    ],
+    [
+      for route_table in aws_route_table.data :
+      route_table.id
+    ]
+  )
+
+  # ---------------------------------------------------------------------------
+  # Private subnets used by Interface endpoints
+  # ---------------------------------------------------------------------------
+
+  private_subnet_ids = concat(
+    [
+      for subnet in aws_subnet.application :
+      subnet.id
+    ],
+    [
+      for subnet in aws_subnet.data :
+      subnet.id
+    ]
+  )
+
+  # ---------------------------------------------------------------------------
+  # Optional Interface endpoints
+  # ---------------------------------------------------------------------------
+
+  optional_interface_services = concat(
+    var.enable_bedrock_endpoints ? [
+      "bedrock",
+      "bedrock-agent",
+      "bedrock-agent-runtime",
+      "bedrock-agentcore",
+      "bedrock-runtime",
+    ] : [],
+
+    var.enable_logs_endpoint ? [
+      "logs",
+    ] : [],
+
+    var.enable_cloudwatch_endpoint ? [
+      "monitoring",
+    ] : [],
+
+    var.enable_kms_endpoint ? [
+      "kms",
+    ] : [],
+
+    var.enable_secretsmanager_endpoint ? [
+      "secretsmanager",
+    ] : [],
+
+    var.enable_transcribe_endpoint ? [
+      "transcribe",
+    ] : [],
+  )
+
+  # ---------------------------------------------------------------------------
+  # Final Interface endpoint set
+  # ---------------------------------------------------------------------------
+
+  interface_services = local.create_endpoints ? toset(local.optional_interface_services) : toset([])
+}
+
+
 variable "project" {
   description = "Project name used for naming and organizing resources"
   type        = string
@@ -57,14 +139,31 @@ variable "public_subnet_cidrs" {
   }
 }
 
-variable "private_subnet_cidrs" {
-  description = "CIDR blocks for private subnets. These host workloads (ECS, RDS, etc.) that should not be directly reachable from the Internet."
+variable "application_subnet_cidrs" {
+  description = "CIDR blocks for application private subnets"
   type        = list(string)
-  default     = []
 
   validation {
-    condition     = alltrue([for c in var.private_subnet_cidrs : can(cidrhost(c, 0))])
-    error_message = "Every private_subnet_cidrs entry must be a valid IPv4 CIDR."
+    condition = alltrue([
+      for cidr in var.application_subnet_cidrs :
+      can(cidrhost(cidr, 0))
+    ])
+
+    error_message = "All application_subnet_cidrs must be valid IPv4 CIDR blocks."
+  }
+}
+
+variable "data_subnet_cidrs" {
+  description = "CIDR blocks for data private subnets"
+  type        = list(string)
+
+  validation {
+    condition = alltrue([
+      for cidr in var.data_subnet_cidrs :
+      can(cidrhost(cidr, 0))
+    ])
+
+    error_message = "All data_subnet_cidrs must be valid IPv4 CIDR blocks."
   }
 }
 
@@ -106,7 +205,7 @@ variable "enable_dns_support" {
 variable "enable_flow_logs" {
   description = "Whether to enable VPC Flow Logs to CloudWatch Logs. Recommended for security auditing (AWS Well-Architected)."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "flow_logs_retention_in_days" {
@@ -142,38 +241,56 @@ variable "flow_logs_kms_key_arn" {
 // gateway or the public Internet. The following flags add optional endpoints.
 //---------------------------------------------------------------------
 
-variable "enable_bedrock_endpoints" {
-  description = "Create interface endpoints for Bedrock services (bedrock, bedrock-agent, bedrock-agent-runtime, bedrock-agentcore, bedrock-runtime)."
+variable "enable_s3_endpoint" {
+  description = "Create the S3 Gateway VPC endpoint."
   type        = bool
-  default     = false
-}
-
-variable "enable_cloudwatch_monitoring_endpoint" {
-  description = "Create an interface endpoint for CloudWatch Metrics (monitoring). The Logs endpoint is always created as part of the baseline."
-  type        = bool
-  default     = false
+  default     = true
 }
 
 variable "enable_dynamodb_endpoint" {
-  description = "Create a gateway endpoint for DynamoDB."
+  description = "Create the DynamoDB Gateway VPC endpoint."
+  type        = bool
+  default     = false
+}
+
+variable "enable_logs_endpoint" {
+  description = "Whether to create the CloudWatch Logs interface VPC endpoint."
+  type        = bool
+  default     = false
+}
+
+variable "enable_ecr_endpoints" {
+  description = "Create ECR API and Docker interface VPC endpoints."
   type        = bool
   default     = false
 }
 
 variable "enable_kms_endpoint" {
-  description = "Create an interface endpoint for KMS."
+  description = "Create the KMS interface VPC endpoint."
+  type        = bool
+  default     = false
+}
+
+variable "enable_cloudwatch_endpoint" {
+  description = "Create the CloudWatch Monitoring interface VPC endpoint."
   type        = bool
   default     = false
 }
 
 variable "enable_secretsmanager_endpoint" {
-  description = "Create an interface endpoint for Secrets Manager."
+  description = "Create the Secrets Manager interface VPC endpoint."
+  type        = bool
+  default     = false
+}
+
+variable "enable_bedrock_endpoints" {
+  description = "Create Bedrock-related interface VPC endpoints."
   type        = bool
   default     = false
 }
 
 variable "enable_transcribe_endpoint" {
-  description = "Create an interface endpoint for Transcribe."
+  description = "Create the Transcribe interface VPC endpoint."
   type        = bool
   default     = false
 }
