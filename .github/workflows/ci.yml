@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
@@ -81,7 +81,7 @@ jobs:
       modules: ${{ steps.find.outputs.modules }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Find module directories
         id: find
@@ -104,7 +104,7 @@ jobs:
         module: ${{ fromJson(needs.discover.outputs.modules) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
@@ -128,7 +128,7 @@ jobs:
         module: ${{ fromJson(needs.discover.outputs.modules) }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup tflint
         uses: terraform-linters/setup-tflint@v6
@@ -153,7 +153,7 @@ jobs:
       security-events: write # upload SARIF to the code-scanning dashboard
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Trivy IaC scan
         uses: aquasecurity/trivy-action@v0.36.0

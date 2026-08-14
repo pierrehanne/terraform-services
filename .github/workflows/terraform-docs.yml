@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Same-repo branch (guaranteed by the job-level if:) so the action can
           # commit the regenerated docs back to it.
