@@ -22,7 +22,7 @@ variable "bucket_name" {
 variable "force_destroy" {
   description = "Whether Terraform may delete the bucket even if it still contains objects. Keep false in production."
   type        = bool
-  default     = false
+  default     = true
 }
 
 //---------------------------------------------------------------------

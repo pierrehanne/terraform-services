@@ -24,7 +24,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "this" {
       status = "Enabled"
 
       filter {
-        prefix = coalesce(rule.value.prefix, "")
+        # coalesce() treats "" as empty too, so it can't supply the "no
+        # prefix filter" fallback when rule.value.prefix is null.
+        prefix = rule.value.prefix != null ? rule.value.prefix : ""
       }
 
       dynamic "transition" {
